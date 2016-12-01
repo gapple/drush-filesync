@@ -61,13 +61,15 @@ function drush_file_sync($source, $destination) {
   }
   $args = array_values($args);
 
+  $public_result = FALSE;
   if (!$only_private) {
-    drush_log(dt('Syncing public files'), 'ok');
+    drush_log(dt('Syncing public files'), 'status');
     $public_result = _drush_file_sync_path_alias($source, $destination, '%files');
   }
 
+  $private_result = FALSE;
   if (!$only_public) {
-    drush_log(dt('Syncing private files'), 'ok');
+    drush_log(dt('Syncing private files'), 'status');
     $private_result = _drush_file_sync_path_alias($source, $destination, '%private', $only_private? 'error': 'warning');
   }
 
@@ -91,7 +93,7 @@ function drush_file_sync($source, $destination) {
     drush_log(dt('Sync partially completed'), 'warning');
   }
   else {
-    drush_log(dt('Sync completed successfully'), 'ok');
+    drush_log(dt('Sync completed successfully'), 'success');
   }
 }
 
@@ -126,5 +128,7 @@ function _drush_file_sync_path_alias($source, $destination, $path_alias, $error_
 
   drush_invoke('rsync', array($source_path, $destination_path));
 
-  return TRUE;
+  // drush_command() doesn't pass along the return value from rsync for
+  // drush_invoke() to make use of, so it's necessary to check the error log.
+  return drush_get_error() === DRUSH_SUCCESS;
 }
