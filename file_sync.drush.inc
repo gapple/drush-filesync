@@ -34,6 +34,20 @@ function file_sync_drush_command() {
 }
 
 /**
+ * Implements hook_drush_help_alter().
+ */
+function file_sync_drush_help_alter(&$command) {
+  $commands = drush_get_commands();
+
+  // Append all of core-rsync's options to file-sync.
+  // This is needed to prevent drush_core_rsync() from sending the additional
+  // options for core-rsync through to rsync as well.
+  if ($command['command'] === 'file-sync' && isset($commands['core-rsync'])) {
+    $command['options'] += $commands['core-rsync']['options'];
+  }
+}
+
+/**
  * File sync command callback.
  */
 function drush_file_sync($source, $destination) {
@@ -46,14 +60,18 @@ function drush_file_sync($source, $destination) {
     return false;
   }
 
-  // drush_core_rsync() loads all of the arguments and options originally
-  // passed to drush, so using drush_unset_option('private') is ineffective and
-  // we need to hack the context instead.
+  // drush_unset_option() is needed to prevent the options for file-sync getting
+  // passed through to core-rsync.
+  // core-rync loads the original command line options to pass to rsync, so some
+  // additional context-hacking is needed.
+  // see drush_core_rsync() and drush_get_original_cli_args_and_options().
   $args = &drush_get_context('DRUSH_COMMAND_ARGS', array());
   $original_args = $args;
 
-  // TODO load all options from command definition.
-  foreach (array('only-public', 'only-private') as $option) {
+  $command = drush_get_command();
+  foreach (array_keys($command['options']) as $option) {
+    drush_unset_option($option, 'cli');
+
     $arg_index = array_search('--' . $option, $args);
     if ($arg_index !== FALSE) {
       unset($args[$arg_index]);
