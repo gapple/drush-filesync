@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * @file
+ * Provide a file-sync command to sync files directories between environments.
+ */
+
+/**
+ * Implements hook_drush_command().
+ */
 function file_sync_drush_command() {
   $commands = array();
 
@@ -8,7 +16,7 @@ function file_sync_drush_command() {
     'aliases' => array('fsync'),
     'arguments' => array(
       'source' => 'Source alias',
-      'destination' => 'Destination alias',
+      'destination' => 'Destination alias', // TODO make this optional and default to @self
     ),
     'options' => array(
       'only-public' => 'Only sync the public files directory',
@@ -25,6 +33,9 @@ function file_sync_drush_command() {
   return $commands;
 }
 
+/**
+ * File sync command callback.
+ */
 function drush_file_sync($source, $destination) {
 
   $only_public = drush_get_option('only-public', FALSE);
@@ -68,9 +79,15 @@ function drush_file_sync($source, $destination) {
     ||
     ($only_private && !$private_result)
   ) {
+    // If public transfer is attempted but fails, it's always an error.
+    // If private transfer is attempted but fails, it's an error if only
+    // transferring private files was attempted.
     drush_log(dt('Sync could not complete successfully'), 'error');
   }
-  else if (!$only_public && !$only_private && !$private_result){
+  else if (!$only_public && !$only_private && !$private_result) {
+    // A private file path may not be defined, so it's only a warning if the
+    // private transfer could not be completed while attempting to transfer all
+    // files.
     drush_log(dt('Sync partially completed'), 'warning');
   }
   else {
@@ -79,6 +96,8 @@ function drush_file_sync($source, $destination) {
 }
 
 /**
+ * Helper function to sync a single path between two environments.
+ *
  * @param $source
  * @param $destination
  * @param $path_alias
