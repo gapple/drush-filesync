@@ -1,0 +1,12 @@
+{
+  "name": "gapple/drush-filesync",
+  "description": "Drush command to sync files directory between environments",
+  "type": "drupal-drush",
+  "license": "MIT",
+  "require-dev": {
+    "drush/drush": "^8.0"
+  },
+  "suggest": {
+    "composer/installers": "Install plugin to correct location"
+  }
+}
